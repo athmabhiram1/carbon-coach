@@ -15,7 +15,7 @@ export default function EcoScorePanel({ ecoScore, rank, totalUsers }: EcoScorePa
   const progressPercent = ecoScore.progressToNext || 85;
 
   return (
-    <div className="glass-card rounded-2xl p-8 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[360px] fade-in-rise">
+    <div className="glass-card rounded-2xl rounded-tl-[2.5rem] rounded-br-[2.5rem] p-8 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-outline-variant/30 min-h-[380px] fade-in-rise transition-all duration-300 hover:shadow-[0_25px_60px_rgba(75,226,119,0.15)] hover:border-primary/20">
       <div>
         <span className="bg-secondary-container/30 text-secondary-fixed font-label-caps text-label-caps px-3 py-1 rounded-full text-[10px] uppercase tracking-wider">
           EcoScore
@@ -47,7 +47,7 @@ export default function EcoScorePanel({ ecoScore, rank, totalUsers }: EcoScorePa
         </div>
 
         {/* Streak Information Panel */}
-        <div className="flex items-center gap-3 bg-surface-container-high/40 p-4 rounded-xl border border-outline-variant/30">
+        <div className="flex items-center gap-3 bg-surface-container-high/40 p-4 rounded-xl rounded-tl-2xl rounded-br-2xl border border-outline-variant/30 transition-all hover:bg-surface-container-high/60">
           <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
             local_fire_department
           </span>

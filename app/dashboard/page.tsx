@@ -243,13 +243,17 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-background relative overflow-x-hidden font-body-base flex flex-col justify-between" role="main">
-      {/* Fixed Background Image */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      {/* Fixed Background Image and Ambient Glow Blobs */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div 
-          className="w-full h-full bg-cover bg-center opacity-40 mix-blend-luminosity" 
+          className="w-full h-full bg-cover bg-center opacity-25 mix-blend-luminosity" 
           style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgVFNK8MqDYxHQPg9PlFyYWVUQihcF-tBjeYjpD1tSEkDYHk0r_4qMvXqGkltR3i21iRXHiRMyyCnFJRHPNGNx8SIAS7aR8Lu1mjM_6hsaRDyLiaOf_0Nu3AsG0fvo_N6j4fX4-RcE-CoTv4rmdsbtl7jBmTYsZh6YNXDPF7lFniHDz37fq_5hGebVh8zuTmKukjIz3Oiogh1l94iljk_iwe_8QuKCD4fsPWT0IjcnsMdcnpc3ZgqodhatAWECMmye1DDtcJPr0TJl')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        {/* Organic ambient light blobs */}
+        <div className="absolute top-[10%] left-[-15%] w-[600px] h-[600px] rounded-full bg-primary/10 blur-[150px] mix-blend-screen animate-[pulse_8s_infinite_ease-in-out]" />
+        <div className="absolute bottom-[20%] right-[-15%] w-[700px] h-[700px] rounded-full bg-secondary/15 blur-[180px] mix-blend-screen" />
+        <div className="absolute top-[50%] left-[30%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[130px] mix-blend-screen animate-[pulse_12s_infinite_ease-in-out]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
       </div>
 
       <Navbar />

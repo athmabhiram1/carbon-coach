@@ -170,7 +170,7 @@ export default function AICoach({ persona, result, existingActions, onActionsSug
   const proactiveMessage = `Hi! I'm EcoMind, your AI Carbon Coach. I see your annual footprint is estimated at ${totalTonnes} tons of CO₂. Your main category is ${result.topCategory.toUpperCase()}. How can I help you reduce your daily impact?`;
 
   return (
-    <div className="glass-card rounded-2xl p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-h-[360px] fade-in-rise">
+    <div className="glass-card rounded-2xl rounded-tl-[2.5rem] rounded-br-[2.5rem] p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-outline-variant/30 min-h-[380px] fade-in-rise transition-all duration-300 hover:shadow-[0_25px_60px_rgba(75,226,119,0.15)] hover:border-primary/20">
       <div className="flex justify-between items-center mb-6">
         <span className="bg-primary/10 text-primary font-label-caps text-label-caps px-3 py-1 rounded-full flex items-center gap-2 text-[10px] tracking-wider uppercase">
           <span className="material-symbols-outlined text-[14px]">psychology</span>

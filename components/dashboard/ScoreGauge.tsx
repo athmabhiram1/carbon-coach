@@ -18,7 +18,7 @@ export default function ScoreGauge({ result, personaName }: ScoreGaugeProps) {
   const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <div className="glass-card rounded-2xl p-8 flex flex-col items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden min-h-[360px] fade-in-rise">
+    <div className="glass-card rounded-2xl rounded-tl-[2.5rem] rounded-br-[2.5rem] p-8 flex flex-col items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-outline-variant/30 relative overflow-hidden min-h-[380px] fade-in-rise transition-all duration-300 hover:shadow-[0_25px_60px_rgba(75,226,119,0.15)] hover:border-primary/20">
       {/* Eyebrow badge */}
       <div className="absolute top-6 left-6 flex items-center gap-2">
         <span className="bg-primary-container/20 text-primary font-label-caps text-label-caps px-3 py-1 rounded-full uppercase tracking-wider text-[10px]">
@@ -28,6 +28,8 @@ export default function ScoreGauge({ result, personaName }: ScoreGaugeProps) {
 
       {/* SVG Circular Gauge */}
       <div className="relative w-56 h-56 mt-8 flex items-center justify-center pulse-once">
+        {/* Ambient glow behind the circular gauge */}
+        <div className="absolute inset-4 bg-primary/5 blur-2xl rounded-full pointer-events-none" />
         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100" aria-label={`Carbon footprint gauge showing ${totalTonnes} tonnes`}>
           <circle 
             className="text-surface-container-highest" 
@@ -65,17 +67,17 @@ export default function ScoreGauge({ result, personaName }: ScoreGaugeProps) {
 
       {/* Comparative Context Stats */}
       <div className="mt-8 flex gap-4 w-full justify-center">
-        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px]">
+        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl rounded-tl-2xl rounded-br-2xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px] transition-all hover:bg-surface-container-high/60">
           <span className="text-on-surface-variant text-xs">National Avg</span>
           <span className="font-data-metric text-lg text-on-surface font-semibold mt-1">16.0t</span>
         </div>
-        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px]">
+        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl rounded-tl-2xl rounded-br-2xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px] transition-all hover:bg-surface-container-high/60">
           <span className="text-on-surface-variant text-xs">{personaName} Avg</span>
           <span className="font-data-metric text-lg text-on-surface-variant font-semibold mt-1">
             {(result.totalKgCO2PerYear / 1000).toFixed(1)}t
           </span>
         </div>
-        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px]">
+        <div className="bg-surface-container-high/40 border border-white/5 rounded-xl rounded-tl-2xl rounded-br-2xl px-4 py-2.5 flex flex-col items-center flex-1 max-w-[130px] transition-all hover:bg-surface-container-high/60">
           <span className="text-on-surface-variant text-xs">Net Zero Target</span>
           <span className="font-data-metric text-lg text-primary font-semibold mt-1">2.0t</span>
         </div>
