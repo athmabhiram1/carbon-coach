@@ -49,7 +49,7 @@ const STEWARD_AVATARS = [
   "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
 ];
 
-function getStewardDetails(anonymousId: string, isCurrentUser: boolean) {
+function getStewardDetails(anonymousId: string, isCurrentUser: boolean, index: number) {
   if (isCurrentUser) {
     return {
       name: "You (Steward)",
@@ -57,15 +57,15 @@ function getStewardDetails(anonymousId: string, isCurrentUser: boolean) {
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100"
     };
   }
-  let hash = 0;
-  for (let i = 0; i < anonymousId.length; i++) {
-    hash = anonymousId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  hash = Math.abs(hash);
+  
+  // Use index-based mapping with prime multipliers to guarantee uniqueness
+  const nameIdx = (index * 7) % STEWARD_NAMES.length;
+  const regionIdx = (index * 3) % STEWARD_REGIONS.length;
+  const avatarIdx = (index * 11) % STEWARD_AVATARS.length;
 
-  const name = STEWARD_NAMES[hash % STEWARD_NAMES.length];
-  const region = STEWARD_REGIONS[hash % STEWARD_REGIONS.length];
-  const avatar = STEWARD_AVATARS[hash % STEWARD_AVATARS.length];
+  const name = STEWARD_NAMES[nameIdx];
+  const region = STEWARD_REGIONS[regionIdx];
+  const avatar = STEWARD_AVATARS[avatarIdx];
   return { name, region, avatar };
 }
 
@@ -316,7 +316,7 @@ export default function LeaderboardPage() {
                     {entries.map((entry, i) => {
                       const globalRank = page * PER_PAGE + i + 1;
                       const isCurrentUser = entry.anonymous_id === currentAnonymousId;
-                      const { name, region, avatar } = getStewardDetails(entry.anonymous_id, isCurrentUser);
+                      const { name, region, avatar } = getStewardDetails(entry.anonymous_id, isCurrentUser, globalRank);
 
                       return (
                         <tr
