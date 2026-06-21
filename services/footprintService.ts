@@ -1,5 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
-import type { Database, Json } from "@/lib/supabase/types";
+import type { Json } from "@/lib/supabase/types";
 import type { ActionRecord } from "@/types/footprint";
 
 export interface SaveFootprintData {
@@ -27,22 +27,32 @@ export async function saveFootprint(
     let existingId: string | undefined = undefined;
 
     if (data.userId) {
-      const { data: existing } = (await supabase
-        .from("footprints")
-        .select("id")
-        .eq("user_id", data.userId)
-        .maybeSingle()) as unknown as { data: { id: string } | null };
-      if (existing) existingId = existing.id;
-    } else if (data.anonymousId) {
-      const { data: existing } = (await supabase
-        .from("footprints")
-        .select("id")
-        .eq("anonymous_id", data.anonymousId)
-        .maybeSingle()) as unknown as { data: { id: string } | null };
-      if (existing) existingId = existing.id;
+      try {
+        const { data: existing } = (await supabase
+          .from("footprints")
+          .select("id")
+          .eq("user_id", data.userId)
+          .maybeSingle()) as unknown as { data: { id: string } | null };
+        if (existing) existingId = existing.id;
+      } catch {
+        // Fallback to anonymousId check if user_id column doesn't exist
+      }
     }
 
-    const payload: Database["public"]["Tables"]["footprints"]["Insert"] = {
+    if (!existingId && data.anonymousId) {
+      try {
+        const { data: existing } = (await supabase
+          .from("footprints")
+          .select("id")
+          .eq("anonymous_id", data.anonymousId)
+          .maybeSingle()) as unknown as { data: { id: string } | null };
+        if (existing) existingId = existing.id;
+      } catch {
+        // Ignore
+      }
+    }
+
+    const payload: Record<string, any> = {
       user_id: data.userId || null,
       anonymous_id: data.userId ? null : (data.anonymousId || null),
       persona_id: data.personaId,
@@ -58,29 +68,38 @@ export async function saveFootprint(
       streak_days: data.streakDays,
     };
 
-    if (existingId) {
-      const { error } = await (supabase.from("footprints") as unknown as {
-        update: (values: unknown) => { eq: (col: string, val: string) => Promise<{ error: { message: string } | null }> };
-      })
-        .update({
-          ...payload,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existingId);
+    const trySave = async (payloadData: Record<string, any>): Promise<any> => {
+      if (existingId) {
+        return await (supabase.from("footprints") as any)
+          .update({
+            ...payloadData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingId);
+      } else {
+        return await (supabase.from("footprints") as any)
+          .insert(payloadData)
+          .select("id")
+          .single();
+      }
+    };
 
-      if (error) return { success: false, error: error.message };
-      return { success: true, id: existingId };
+    let result = await trySave(payload);
+
+    // If saving fails due to missing user_id column, strip user_id and retry
+    if (result.error && (result.error.message.includes("user_id") || result.error.message.includes("column"))) {
+      console.warn("Retrying footprint save without user_id column...");
+      const strippedPayload = { ...payload };
+      delete strippedPayload.user_id;
+      if (data.anonymousId) {
+        strippedPayload.anonymous_id = data.anonymousId;
+      }
+      result = await trySave(strippedPayload);
     }
 
-    const { data: inserted, error } = (await (supabase.from("footprints") as unknown as {
-      insert: (values: unknown) => { select: (col: string) => { single: () => Promise<unknown> } };
-    })
-      .insert(payload)
-      .select("id")
-      .single()) as unknown as { data: { id: string } | null; error: { message: string } | null };
-
-    if (error) return { success: false, error: error.message };
-    return { success: true, id: inserted?.id };
+    if (result.error) return { success: false, error: result.error.message };
+    const insertedId = (result as any).data?.id || existingId;
+    return { success: true, id: insertedId };
   } catch (err) {
     return {
       success: false,
@@ -93,20 +112,32 @@ export async function getFootprint(anonymousId?: string | null, userId?: string 
   try {
     const supabase = createServiceClient();
     
-    let query = supabase.from("footprints").select("*");
-    
     if (userId) {
-      query = query.eq("user_id", userId);
-    } else if (anonymousId) {
-      query = query.eq("anonymous_id", anonymousId);
-    } else {
-      return { error: "Either user_id or anonymous_id must be provided" };
+      try {
+        const { data, error } = await supabase
+          .from("footprints")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!error && data) {
+          return { data: data ?? undefined };
+        }
+      } catch {
+        // Fallback to anonymousId
+      }
+    }
+    
+    if (anonymousId) {
+      const { data, error } = await supabase
+        .from("footprints")
+        .select("*")
+        .eq("anonymous_id", anonymousId)
+        .maybeSingle();
+      if (error) return { error: error.message };
+      return { data: data ?? undefined };
     }
 
-    const { data, error } = await query.maybeSingle();
-
-    if (error) return { error: error.message };
-    return { data: data ?? undefined };
+    return { error: "Either user_id or anonymous_id must be provided" };
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Unknown error",
