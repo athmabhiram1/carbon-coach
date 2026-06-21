@@ -34,11 +34,12 @@ function getStewardDetails(entry: LeaderboardEntry, isCurrentUser: boolean) {
   };
 }
 
-export default function LeaderboardPreview({}: LeaderboardPreviewProps) {
-  const { user, anonymousId: authAnonId } = useAuth();
+export default function LeaderboardPreview({ currentAnonymousId }: LeaderboardPreviewProps) {
+  const { user } = useAuth();
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const anonId = currentAnonymousId || (typeof window !== "undefined" ? localStorage.getItem("carbon-coach-anonymous-id") || "" : "");
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -78,7 +79,7 @@ export default function LeaderboardPreview({}: LeaderboardPreviewProps) {
         {data.map((entry, i) => {
           const isCurrentUser = 
             (user && entry.user_id === user.id) || 
-            (!user && entry.anonymous_id === authAnonId);
+            (!user && entry.anonymous_id === anonId);
           const { name, region, avatar } = getStewardDetails(entry, isCurrentUser);
           const PersonaIcon = getPersonaIconComponent(entry.persona_id);
           

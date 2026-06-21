@@ -64,7 +64,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 };
 
 export default function LeaderboardPage() {
-  const { user, anonymousId: authAnonId, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -74,6 +74,7 @@ export default function LeaderboardPage() {
   const [currentAnonymousId, setCurrentAnonymousId] = useState<string>("");
   const [userRankInfo, setUserRankInfo] = useState<{ rank: number; totalCount: number } | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const getAnonId = () => typeof window !== "undefined" ? localStorage.getItem("carbon-coach-anonymous-id") || "" : "";
 
   const fetchPage = useCallback(
     async (pageNum: number, sort: SortKey, append = false) => {
@@ -114,16 +115,18 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    setCurrentAnonymousId(authAnonId);
+    const anon = getAnonId();
+    setCurrentAnonymousId(anon);
     fetchPage(0, "eco_score", false);
-  }, [authLoading, authAnonId, fetchPage]);
+  }, [authLoading, fetchPage]);
 
   useEffect(() => {
     if (authLoading || entries.length === 0) return;
+    const anon = getAnonId();
 
     const inTop = entries.some((e) => 
       (user && e.user_id === user.id) || 
-      (!user && e.anonymous_id === authAnonId)
+      (!user && e.anonymous_id === anon)
     );
 
     if (!inTop) {
@@ -131,7 +134,7 @@ export default function LeaderboardPage() {
         .then((r) => r.json())
         .then((json) => {
           const total = json.totalCount ?? 0;
-          fetchUserRank(authAnonId, user?.id || null).then((rank) => {
+          fetchUserRank(anon, user?.id || null).then((rank) => {
             if (rank !== undefined) setUserRankInfo({ rank, totalCount: total });
           });
         })
@@ -139,7 +142,7 @@ export default function LeaderboardPage() {
     } else {
       setUserRankInfo(null);
     }
-  }, [authLoading, authAnonId, user, entries]);
+  }, [authLoading, user, entries]);
 
   const handleSortChange = (key: SortKey) => {
     setSortKey(key);

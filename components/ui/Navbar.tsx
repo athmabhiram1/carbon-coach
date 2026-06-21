@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserProfile } from "@/components/auth/UserProfile";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const navItems = [
     { label: "Dashboard", href: "/dashboard" },
@@ -43,19 +45,27 @@ export function Navbar() {
         })}
       </div>
 
-      <div className="hidden md:block">
-        <UserProfile />
-      </div>
+      <div className="flex items-center gap-4">
+        {!isAuthenticated ? (
+          <Link href="/auth/sign-in">
+            <button className="px-4 py-1.5 md:px-5 md:py-2 rounded-full bg-primary text-on-primary text-[10px] md:text-xs font-bold hover:bg-primary-fixed transition-all scale-95 hover:scale-100 active:scale-95 font-label-caps tracking-wider">
+              SIGN IN
+            </button>
+          </Link>
+        ) : (
+          <UserProfile />
+        )}
 
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden text-on-surface hover:text-primary transition-colors focus:outline-none"
-        aria-expanded={isOpen}
-        aria-label="Toggle menu"
-      >
-        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
+        {/* Mobile menu button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden text-on-surface hover:text-primary transition-colors focus:outline-none"
+          aria-expanded={isOpen}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
 
       {/* Mobile Drawer */}
       <div
@@ -80,9 +90,6 @@ export function Navbar() {
             </Link>
           );
         })}
-        <div className="mt-4 flex justify-center">
-          <UserProfile />
-        </div>
       </div>
     </nav>
   );

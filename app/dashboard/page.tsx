@@ -24,6 +24,7 @@ import type { Persona } from "@/lib/personas";
 import type { EcoScore } from "@/lib/ecoScore";
 import type { Action } from "@/lib/timeMachine";
 import { useAuth } from "@/lib/hooks/useAuth";
+import Link from "next/link";
 
 const BreakdownChart = dynamic(
   () => import("@/components/dashboard/BreakdownChart"),
@@ -46,7 +47,7 @@ const DEFAULT_ACTIONS: Action[] = [
 ];
 
 export default function Dashboard() {
-  const { user, anonymousId: authAnonId, isLoading: authLoading, isAnonymous, signInWithOAuth } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [persona, setPersona] = useState<Persona | null>(null);
@@ -56,6 +57,9 @@ export default function Dashboard() {
   const [checkedActions, setCheckedActions] = useState<string[]>([]);
   const [customActions, setCustomActions] = useState<Action[]>([]);
   const [anonymousId, setAnonymousId] = useState<string>("");
+
+  const getAnonId = () => typeof window !== "undefined" ? localStorage.getItem("carbon-coach-anonymous-id") || "" : "";
+
   const [userRank] = useState<number | undefined>();
   const [totalUsers, setTotalUsers] = useState<number | undefined>();
 
@@ -79,7 +83,8 @@ export default function Dashboard() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const idParam = authAnonId ? `?anonymous_id=${authAnonId}` : "";
+        const anon = getAnonId();
+        const idParam = anon ? `?anonymous_id=${anon}` : "";
         const apiRes = await fetch(`/api/footprint${idParam}`);
         
         let dbFootprint = null;
@@ -202,7 +207,7 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, [authLoading, authAnonId, router, allActions]);
+  }, [authLoading, router, allActions]);
 
   const recalcEcoScore = useCallback(
     (checked: string[], actions: Action[]) => {
@@ -344,7 +349,7 @@ export default function Dashboard() {
       <div className="relative z-10 pt-[120px] pb-section-gap px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto space-y-gutter flex-grow w-full">
         <StorageWarning />
 
-        {isAnonymous && (
+        {!user && (
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-on-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in-rise">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-amber-500 text-[24px]">shield_alert</span>
@@ -354,12 +359,12 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button 
-                onClick={() => signInWithOAuth("google")} 
+              <Link
+                href="/auth/sign-in"
                 className="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-full hover:bg-primary-fixed scale-95 active:scale-90 transition-all font-label-caps"
               >
-                SIGN IN WITH GOOGLE
-              </button>
+                SIGN IN
+              </Link>
             </div>
           </div>
         )}

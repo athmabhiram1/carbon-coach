@@ -2,20 +2,17 @@
 
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AuthButton } from "./AuthButton";
-import { User, ShieldAlert } from "lucide-react";
+import { User } from "lucide-react";
 import { useState } from "react";
 
 export function UserProfile() {
-  const { user, profile, isAnonymous } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const displayName = user
-    ? profile?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || "Eco Warrior"
-    : "Anonymous Steward";
+  const displayName = (profile?.display_name as string) || (user?.user_metadata?.name as string) || (user?.user_metadata?.full_name as string) || "Eco Warrior";
+  const avatarUrl = (profile?.avatar_url as string) || (user?.user_metadata?.avatar_url as string) || null;
 
-  const avatarUrl = user
-    ? profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || null
-    : null;
+  if (!isAuthenticated) return null;
 
   return (
     <div className="relative font-body-base">
@@ -41,18 +38,11 @@ export function UserProfile() {
           <div className="flex flex-col text-left">
             <span className="text-xs font-bold text-on-surface truncate">{displayName}</span>
             <span className="text-[10px] text-on-surface-variant mt-0.5">
-              {user ? user.email : "Local Offline Account"}
+              {user?.email || ""}
             </span>
           </div>
 
           <div className="h-px bg-white/5 w-full" />
-
-          {isAnonymous && (
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] leading-normal">
-              <ShieldAlert className="w-4 h-4 shrink-0" />
-              <span>Sign in to save your footprint history across devices.</span>
-            </div>
-          )}
 
           <div className="w-full mt-1">
             <AuthButton />

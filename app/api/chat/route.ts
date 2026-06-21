@@ -5,6 +5,7 @@ import { buildSystemPrompt } from "@/lib/ai/promptBuilder";
 import type { Message } from "@/lib/ai/types";
 import type { Persona } from "@/lib/personas";
 import type { FootprintResult } from "@/lib/carbonCalculator";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const hasAnonymousId = request.cookies.has("carbon-coach-anonymous-id");
+
+    if (!user && !hasAnonymousId) {
+      return NextResponse.json(
+        { error: "Unauthorized session" },
+        { status: 401 }
+      );
+    }
+
     const body: ChatRequest = await request.json();
     const { message, history, persona, footprintResult } = body;
 
@@ -72,14 +84,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (message.length > 1000) {
+      return NextResponse.json(
+        { error: "Message too long. Limit is 1000 characters." },
+        { status: 400 }
+      );
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     const systemPrompt =
       persona && footprintResult
         ? buildSystemPrompt(persona, footprintResult)
         : "You are EcoMind, a friendly carbon footprint coach.";
 
+    const truncatedHistory = (history ?? []).slice(-15);
+    const sanitizedHistory: Message[] = truncatedHistory.map((msg) => ({
+      role: msg.role,
+      content: (msg.content ?? "").substring(0, 1000),
+    }));
+
     const updatedHistory: Message[] = [
-      ...(history ?? []),
+      ...sanitizedHistory,
       { role: "user", content: message },
     ];
 

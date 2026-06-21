@@ -4,15 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
+async function getUserFromSession() {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUserFromSession();
 
     const body = await request.json();
     const { anonymousId } = body;
 
-    // Check that we have a user or a valid anonymous ID
     if (!user && (!anonymousId || typeof anonymousId !== "string")) {
       return NextResponse.json(
         { error: "anonymousId is required for guest saves" },
@@ -64,9 +72,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
+    const user = await getUserFromSession();
     const anonymousId = request.nextUrl.searchParams.get("anonymous_id");
 
     if (!user && !anonymousId) {
