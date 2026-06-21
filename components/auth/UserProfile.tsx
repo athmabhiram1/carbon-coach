@@ -54,7 +54,7 @@ export function UserProfile() {
             </div>
           )}
 
-          <div className="flex justify-end mt-1">
+          <div className="w-full mt-1">
             <AuthButton />
           </div>
         </div>
