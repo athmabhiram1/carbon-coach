@@ -12,8 +12,17 @@ type SortKey = "eco_score" | "total_kg_co2_per_year" | "created_at";
 const LEVEL_TITLES = ["Seedling", "Sprout", "Guardian", "Champion", "Planet Hero"];
 const PER_PAGE = 50;
 
-const STEWARD_NAMES = ["Elena R.", "Marcus G.", "Chloe W.", "Liam K.", "Yuki T.", "Sarah M.", "Oliver D.", "Amara L.", "Sophia V.", "Noah F.", "Lucas A.", "Mia H."];
-const STEWARD_REGIONS = ["Nordic Region", "Pacific Coast", "Central Europe", "East Asia", "Eastern US", "Southern Australia", "British Isles", "West Africa", "Mediterranean"];
+const STEWARD_NAMES = [
+  "Elena R.", "Marcus G.", "Chloe W.", "Liam K.", "Yuki T.", "Sarah M.", "Oliver D.", "Amara L.", 
+  "Sophia V.", "Noah F.", "Lucas A.", "Mia H.", "Siddharth N.", "Fatima B.", "Mateo C.", "Aria S.", 
+  "Leo M.", "Zoe P.", "Kai W.", "Freja L.", "Omar K.", "Hana E.", "Dmitri P.", "Chen W.", 
+  "Maya J.", "Ethan B.", "Zara T.", "Aiden H.", "Lina M.", "Gabriel S.", "Priya K.", "Isaac N.", 
+  "Emma D.", "Tariq A.", "Olivia C.", "Kaito S.", "Sofia G.", "Nour H.", "Lucas V.", "Amélie B."
+];
+const STEWARD_REGIONS = [
+  "Nordic Region", "Pacific Coast", "Central Europe", "East Asia", "Eastern US", "Southern Australia", 
+  "British Isles", "West Africa", "Mediterranean", "South America", "Northern Canada", "South Asia", "Middle East"
+];
 const STEWARD_AVATARS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
@@ -21,6 +30,23 @@ const STEWARD_AVATARS = [
   "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
   "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
   "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1527983359383-4758693f760c?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1507153079406-79f408500224?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1504257400765-188ae795a76e?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=100",
+  "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
 ];
 
 function getStewardDetails(anonymousId: string, isCurrentUser: boolean) {
