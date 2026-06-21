@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { AuthButton } from "./AuthButton";
 import { User } from "lucide-react";
@@ -23,7 +24,7 @@ export function UserProfile() {
       >
         <div className="w-6 h-6 rounded-full overflow-hidden border border-white/10 flex items-center justify-center bg-primary/20 text-primary">
           {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            <Image src={avatarUrl} alt={displayName} fill className="object-cover" unoptimized />
           ) : (
             <User className="w-3.5 h-3.5" />
           )}

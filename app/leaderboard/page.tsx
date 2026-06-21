@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { getPersonaIconComponent } from "@/lib/personas";
 import { Navbar } from "@/components/ui/Navbar";
@@ -320,7 +321,7 @@ export default function LeaderboardPage() {
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-primary/20 text-primary">
                                 {avatar ? (
-                                  <img className="w-full h-full object-cover" src={avatar} alt={name} />
+                                  <Image className="object-cover" src={avatar} alt={name} fill unoptimized />
                                 ) : (
                                   <span className="material-symbols-outlined text-sm">eco</span>
                                 )}

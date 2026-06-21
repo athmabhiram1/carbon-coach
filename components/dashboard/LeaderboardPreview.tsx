@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getPersonaIconComponent } from "@/lib/personas";
@@ -106,7 +107,7 @@ export default function LeaderboardPreview({ currentAnonymousId }: LeaderboardPr
               
               <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-primary/20 text-primary">
                 {avatar ? (
-                  <img className="w-full h-full object-cover" src={avatar} alt={name} />
+                  <Image src={avatar} alt={name} fill className="object-cover" unoptimized />
                 ) : (
                   <span className="material-symbols-outlined text-xs">eco</span>
                 )}

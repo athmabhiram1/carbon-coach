@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
@@ -73,10 +74,12 @@ export default function Home() {
         <div className="relative min-h-screen flex-grow">
           {/* Fixed Cinematic Background */}
           <div className="fixed inset-0 z-0 pointer-events-none">
-            <img 
-              className="w-full h-full object-cover opacity-60 mix-blend-luminosity" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFtPszxelCFQ2gWZw5vQGByrh478qtMKEdShGRHK3OISYRV-DnM1qWhwUBYrbr-d52Xd6vJMPvMYVXVDt_EV98ZuKJaAC68t2PpecwGOalR9G4LrvGoAcUt86eQtW63Yr-DAqeJct27e-XKFhkc-z2hbKR4ZFtngZVsyVKuPdAzdblNVrkzfjBThxoHXKYR_ruUi0myScIMwbyckUOxqS5QhIcjUAHL-OKJ0bIclz2CuDxyx4IgjMDpw98wQ7bvM4c1wr4FtJ3TwXS" 
-              alt="Misty Forest" 
+            <Image
+              fill
+              className="object-cover opacity-60 mix-blend-luminosity"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFtPszxelCFQ2gWZw5vQGByrh478qtMKEdShGRHK3OISYRV-DnM1qWhwUBYrbr-d52Xd6vJMPvMYVXVDt_EV98ZuKJaAC68t2PpecwGOalR9G4LrvGoAcUt86eQtW63Yr-DAqeJct27e-XKFhkc-z2hbKR4ZFtngZVsyVKuPdAzdblNVrkzfjBThxoHXKYR_ruUi0myScIMwbyckUOxqS5QhIcjUAHL-OKJ0bIclz2CuDxyx4IgjMDpw98wQ7bvM4c1wr4FtJ3TwXS"
+              alt="Misty Forest"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
           </div>
