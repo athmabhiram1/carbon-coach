@@ -135,8 +135,8 @@ export default function AICoach({ persona, result, existingActions, onActionsSug
         onActionsSuggested(actions);
 
         const suggestionsList = suggestions
-          .map((s) => `• ${s.label} (-${s.savingsKg} kg/yr)`)
-          .join("\n");
+          .map((s) => `• **${s.label}** (-${s.savingsKg} kg/yr)\n  _Why:_ ${s.reasoning || "Prioritized to target your highest emission categories first."}`)
+          .join("\n\n");
 
         setMessages((prev) => [
           ...prev,

@@ -33,7 +33,7 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient() as any;
+      const supabase = createClient();
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -51,11 +51,13 @@ export default function SignUpPage() {
 
       if (signUpData.user) {
         // Ensure a profile is created
-        await supabase.from("profiles").upsert({
-          id: signUpData.user.id,
-          display_name: name,
-          region: "Global",
-        });
+        await (supabase.from("profiles") as unknown as { upsert: (values: unknown) => Promise<unknown> }).upsert([
+          {
+            id: signUpData.user.id,
+            display_name: name,
+            region: "Global",
+          },
+        ]);
       }
 
       router.push("/dashboard");

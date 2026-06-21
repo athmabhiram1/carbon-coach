@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     if (apiKey) {
       provider = new GeminiProvider(apiKey);
     } else {
-      console.log("GEMINI_API_KEY not found. Using local Ollama provider for testing.");
+      console.warn("GEMINI_API_KEY not found. Using local Ollama provider for testing.");
       const host = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
       const modelName = process.env.OLLAMA_MODEL || "llama3";
       provider = new OllamaProvider(host, modelName);
