@@ -49,7 +49,7 @@ const STEWARD_AVATARS = [
   "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
 ];
 
-function getStewardDetails(anonymousId: string, isCurrentUser: boolean, index: number) {
+function getStewardDetails(isCurrentUser: boolean, index: number) {
   if (isCurrentUser) {
     return {
       name: "You (Steward)",
@@ -316,7 +316,7 @@ export default function LeaderboardPage() {
                     {entries.map((entry, i) => {
                       const globalRank = page * PER_PAGE + i + 1;
                       const isCurrentUser = entry.anonymous_id === currentAnonymousId;
-                      const { name, region, avatar } = getStewardDetails(entry.anonymous_id, isCurrentUser, globalRank);
+                      const { name, region, avatar } = getStewardDetails(isCurrentUser, globalRank);
 
                       return (
                         <tr

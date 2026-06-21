@@ -54,7 +54,7 @@ const STEWARD_AVATARS = [
   "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
 ];
 
-function getStewardDetails(anonymousId: string, isCurrentUser: boolean, index: number) {
+function getStewardDetails(isCurrentUser: boolean, index: number) {
   if (isCurrentUser) {
     return {
       name: "You (Steward)",
@@ -118,7 +118,7 @@ export default function LeaderboardPreview({
       <div className="space-y-2">
         {data.map((entry, i) => {
           const isCurrentUser = entry.anonymous_id === currentAnonymousId;
-          const { name, region, avatar } = getStewardDetails(entry.anonymous_id, isCurrentUser, i + 1);
+          const { name, region, avatar } = getStewardDetails(isCurrentUser, i + 1);
           const PersonaIcon = getPersonaIconComponent(entry.persona_id);
           
           return (
