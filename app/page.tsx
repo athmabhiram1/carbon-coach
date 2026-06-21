@@ -12,6 +12,7 @@ import { Footer } from "@/components/ui/Footer";
 import type { Persona } from "@/lib/personas";
 import type { UserInputs } from "@/lib/carbonCalculator";
 import { safeGetItem, safeSetItem } from "@/lib/storage";
+import { AnonymousGate } from "@/components/auth/AnonymousGate";
 
 interface SavedData {
   anonymousId: string;
@@ -61,7 +62,8 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen bg-background relative overflow-x-hidden flex flex-col justify-between">
+    <AnonymousGate>
+      <main className="min-h-screen bg-background relative overflow-x-hidden flex flex-col justify-between">
       <StorageWarning />
       
       {/* Floating glass navbar */}
@@ -102,5 +104,6 @@ export default function Home() {
       {/* Shared Footer */}
       <Footer />
     </main>
+    </AnonymousGate>
   );
 }

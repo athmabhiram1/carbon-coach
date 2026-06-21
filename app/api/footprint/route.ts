@@ -1,34 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  saveFootprint,
-  getFootprint,
-} from "@/lib/supabase/footprintService";
+import { saveFootprint, getFootprint } from "@/lib/supabase/footprintService";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     const body = await request.json();
     const { anonymousId } = body;
 
-    if (!anonymousId || typeof anonymousId !== "string") {
+    // Check that we have a user or a valid anonymous ID
+    if (!user && (!anonymousId || typeof anonymousId !== "string")) {
       return NextResponse.json(
-        { error: "anonymousId is required" },
+        { error: "anonymousId is required for guest saves" },
         { status: 400 }
       );
     }
 
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(anonymousId)) {
-      return NextResponse.json(
-        { error: "Invalid anonymousId format" },
-        { status: 400 }
-      );
+    if (anonymousId) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(anonymousId)) {
+        return NextResponse.json(
+          { error: "Invalid anonymousId format" },
+          { status: 400 }
+        );
+      }
     }
 
     const result = await saveFootprint({
-      anonymousId,
+      userId: user?.id ?? null,
+      anonymousId: user ? null : anonymousId,
       personaId: body.personaId,
       totalKgCO2PerYear: body.totalKgCO2PerYear,
       breakdown: body.breakdown,
@@ -50,9 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, id: result.id });
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: err instanceof Error ? err.message : "Internal server error" },
       { status: 500 }
     );
   }
@@ -60,16 +64,19 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     const anonymousId = request.nextUrl.searchParams.get("anonymous_id");
 
-    if (!anonymousId) {
+    if (!user && !anonymousId) {
       return NextResponse.json(
-        { error: "anonymous_id query parameter is required" },
+        { error: "anonymous_id query parameter or active user session is required" },
         { status: 400 }
       );
     }
 
-    const result = await getFootprint(anonymousId);
+    const result = await getFootprint(user ? null : anonymousId, user?.id ?? null);
 
     if (result.error) {
       return NextResponse.json(
@@ -86,9 +93,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(result.data);
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: err instanceof Error ? err.message : "Internal server error" },
       { status: 500 }
     );
   }

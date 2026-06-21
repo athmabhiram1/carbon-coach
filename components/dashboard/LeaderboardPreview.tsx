@@ -3,81 +3,40 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getPersonaIconComponent } from "@/lib/personas";
+import { useAuth } from "@/lib/hooks/useAuth";
+import type { LeaderboardEntry } from "@/lib/supabase/types";
 
 interface LeaderboardPreviewProps {
   currentAnonymousId?: string;
 }
 
-interface Entry {
-  anonymous_id: string;
-  persona_id: string;
-  eco_score: number;
-  eco_level: number;
-  total_kg_co2_per_year: number;
-  created_at: string;
-}
-
-const STEWARD_NAMES = [
-  "Elena R.", "Marcus G.", "Chloe W.", "Liam K.", "Yuki T.", "Sarah M.", "Oliver D.", "Amara L.", 
-  "Sophia V.", "Noah F.", "Lucas A.", "Mia H.", "Siddharth N.", "Fatima B.", "Mateo C.", "Aria S.", 
-  "Leo M.", "Zoe P.", "Kai W.", "Freja L.", "Omar K.", "Hana E.", "Dmitri P.", "Chen W.", 
-  "Maya J.", "Ethan B.", "Zara T.", "Aiden H.", "Lina M.", "Gabriel S.", "Priya K.", "Isaac N.", 
-  "Emma D.", "Tariq A.", "Olivia C.", "Kaito S.", "Sofia G.", "Nour H.", "Lucas V.", "Amélie B."
-];
-const STEWARD_REGIONS = [
-  "Nordic Region", "Pacific Coast", "Central Europe", "East Asia", "Eastern US", "Southern Australia", 
-  "British Isles", "West Africa", "Mediterranean", "South America", "Northern Canada", "South Asia", "Middle East"
-];
-const STEWARD_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1527983359383-4758693f760c?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1507153079406-79f408500224?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1504257400765-188ae795a76e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
-];
-
-function getStewardDetails(isCurrentUser: boolean, index: number) {
+function getStewardDetails(entry: LeaderboardEntry, isCurrentUser: boolean) {
   if (isCurrentUser) {
     return {
       name: "You (Steward)",
-      region: "Local Region",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100"
+      region: entry.profiles?.region || "Local Region",
+      avatar: entry.profiles?.avatar_url || ""
     };
   }
-  
-  // Use index-based mapping with prime multipliers to guarantee uniqueness
-  const nameIdx = (index * 7) % STEWARD_NAMES.length;
-  const regionIdx = (index * 3) % STEWARD_REGIONS.length;
-  const avatarIdx = (index * 11) % STEWARD_AVATARS.length;
 
-  const name = STEWARD_NAMES[nameIdx];
-  const region = STEWARD_REGIONS[regionIdx];
-  const avatar = STEWARD_AVATARS[avatarIdx];
-  return { name, region, avatar };
+  if (entry.profiles && (entry.profiles.display_name || entry.profiles.avatar_url)) {
+    return {
+      name: entry.profiles.display_name || "Eco Warrior",
+      region: entry.profiles.region || "Global",
+      avatar: entry.profiles.avatar_url || ""
+    };
+  }
+
+  return {
+    name: "Anonymous Steward",
+    region: "Global",
+    avatar: ""
+  };
 }
 
-export default function LeaderboardPreview({
-  currentAnonymousId,
-}: LeaderboardPreviewProps) {
-  const [data, setData] = useState<Entry[]>([]);
+export default function LeaderboardPreview({}: LeaderboardPreviewProps) {
+  const { user, anonymousId: authAnonId } = useAuth();
+  const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -117,13 +76,15 @@ export default function LeaderboardPreview({
 
       <div className="space-y-2">
         {data.map((entry, i) => {
-          const isCurrentUser = entry.anonymous_id === currentAnonymousId;
-          const { name, region, avatar } = getStewardDetails(isCurrentUser, i + 1);
+          const isCurrentUser = 
+            (user && entry.user_id === user.id) || 
+            (!user && entry.anonymous_id === authAnonId);
+          const { name, region, avatar } = getStewardDetails(entry, isCurrentUser);
           const PersonaIcon = getPersonaIconComponent(entry.persona_id);
           
           return (
             <div
-              key={entry.anonymous_id}
+              key={entry.anonymous_id || entry.user_id || i}
               className={`flex items-center gap-3 rounded-xl px-4 py-2 text-sm border ${
                 isCurrentUser
                   ? "bg-primary-container/10 border-primary/40 shadow-sm"
@@ -142,8 +103,12 @@ export default function LeaderboardPreview({
                 )}
               </span>
               
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
-                <img className="w-full h-full object-cover" src={avatar} alt={name} />
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-primary/20 text-primary">
+                {avatar ? (
+                  <img className="w-full h-full object-cover" src={avatar} alt={name} />
+                ) : (
+                  <span className="material-symbols-outlined text-xs">eco</span>
+                )}
               </div>
 
               <div className="flex-1 min-w-0">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserProfile } from "@/components/auth/UserProfile";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -43,12 +44,7 @@ export function Navbar() {
       </div>
 
       <div className="hidden md:block">
-        <Link
-          href="/"
-          className="bg-primary text-on-primary font-bold px-6 py-2 rounded-full scale-95 active:scale-90 transition-all hover:bg-primary-fixed"
-        >
-          Get Started
-        </Link>
+        <UserProfile />
       </div>
 
       {/* Mobile menu button */}
@@ -84,13 +80,9 @@ export function Navbar() {
             </Link>
           );
         })}
-        <Link
-          href="/"
-          onClick={() => setIsOpen(false)}
-          className="bg-primary text-on-primary font-bold py-4 rounded-full text-center mt-4"
-        >
-          Get Started
-        </Link>
+        <div className="mt-4 flex justify-center">
+          <UserProfile />
+        </div>
       </div>
     </nav>
   );

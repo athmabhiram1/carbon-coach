@@ -6,67 +6,35 @@ import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { GlassCard } from "@/components/ui/GlassCard";
 import type { LeaderboardEntry } from "@/lib/supabase/types";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 type SortKey = "eco_score" | "total_kg_co2_per_year" | "created_at";
 
 const LEVEL_TITLES = ["Seedling", "Sprout", "Guardian", "Champion", "Planet Hero"];
 const PER_PAGE = 50;
 
-const STEWARD_NAMES = [
-  "Elena R.", "Marcus G.", "Chloe W.", "Liam K.", "Yuki T.", "Sarah M.", "Oliver D.", "Amara L.", 
-  "Sophia V.", "Noah F.", "Lucas A.", "Mia H.", "Siddharth N.", "Fatima B.", "Mateo C.", "Aria S.", 
-  "Leo M.", "Zoe P.", "Kai W.", "Freja L.", "Omar K.", "Hana E.", "Dmitri P.", "Chen W.", 
-  "Maya J.", "Ethan B.", "Zara T.", "Aiden H.", "Lina M.", "Gabriel S.", "Priya K.", "Isaac N.", 
-  "Emma D.", "Tariq A.", "Olivia C.", "Kaito S.", "Sofia G.", "Nour H.", "Lucas V.", "Amélie B."
-];
-const STEWARD_REGIONS = [
-  "Nordic Region", "Pacific Coast", "Central Europe", "East Asia", "Eastern US", "Southern Australia", 
-  "British Isles", "West Africa", "Mediterranean", "South America", "Northern Canada", "South Asia", "Middle East"
-];
-const STEWARD_AVATARS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1527983359383-4758693f760c?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1507153079406-79f408500224?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1554151228-14d9def656e4?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1504257400765-188ae795a76e?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=100",
-  "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=100"
-];
-
-function getStewardDetails(isCurrentUser: boolean, index: number) {
+function getStewardDetails(entry: LeaderboardEntry, isCurrentUser: boolean) {
   if (isCurrentUser) {
     return {
       name: "You (Steward)",
-      region: "Local Region",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100"
+      region: entry.profiles?.region || "Local Region",
+      avatar: entry.profiles?.avatar_url || ""
     };
   }
-  
-  // Use index-based mapping with prime multipliers to guarantee uniqueness
-  const nameIdx = (index * 7) % STEWARD_NAMES.length;
-  const regionIdx = (index * 3) % STEWARD_REGIONS.length;
-  const avatarIdx = (index * 11) % STEWARD_AVATARS.length;
 
-  const name = STEWARD_NAMES[nameIdx];
-  const region = STEWARD_REGIONS[regionIdx];
-  const avatar = STEWARD_AVATARS[avatarIdx];
-  return { name, region, avatar };
+  if (entry.profiles && (entry.profiles.display_name || entry.profiles.avatar_url)) {
+    return {
+      name: entry.profiles.display_name || "Eco Warrior",
+      region: entry.profiles.region || "Global",
+      avatar: entry.profiles.avatar_url || ""
+    };
+  }
+
+  return {
+    name: "Anonymous Steward",
+    region: "Global",
+    avatar: ""
+  };
 }
 
 function getLevelTitle(level: number): string {
@@ -96,6 +64,7 @@ const SORT_LABELS: Record<SortKey, string> = {
 };
 
 export default function LeaderboardPage() {
+  const { user, anonymousId: authAnonId, isLoading: authLoading } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -114,7 +83,7 @@ export default function LeaderboardPage() {
         setError(null);
 
         const offset = pageNum * PER_PAGE;
-        const res = await fetch(`/api/leaderboard?offset=${offset}&limit=${PER_PAGE}`);
+        const res = await fetch(`/api/leaderboard?offset=${offset}&limit=${PER_PAGE}&sort=${sort}`);
         if (!res.ok) throw new Error("Failed to fetch leaderboard");
         const json = await res.json();
 
@@ -144,27 +113,33 @@ export default function LeaderboardPage() {
   );
 
   useEffect(() => {
-    const id = localStorage.getItem("carbon-coach-anonymous-id") ?? "";
-    setCurrentAnonymousId(id);
+    if (authLoading) return;
+    setCurrentAnonymousId(authAnonId);
     fetchPage(0, "eco_score", false);
-  }, [fetchPage]);
+  }, [authLoading, authAnonId, fetchPage]);
 
   useEffect(() => {
-    if (!currentAnonymousId || entries.length === 0) return;
+    if (authLoading || entries.length === 0) return;
 
-    const inTop = entries.some((e) => e.anonymous_id === currentAnonymousId);
+    const inTop = entries.some((e) => 
+      (user && e.user_id === user.id) || 
+      (!user && e.anonymous_id === authAnonId)
+    );
+
     if (!inTop) {
       fetch(`/api/leaderboard?offset=0&limit=1`)
         .then((r) => r.json())
         .then((json) => {
           const total = json.totalCount ?? 0;
-          fetchUserRank(currentAnonymousId).then((rank) => {
+          fetchUserRank(authAnonId, user?.id || null).then((rank) => {
             if (rank !== undefined) setUserRankInfo({ rank, totalCount: total });
           });
         })
         .catch(() => {});
+    } else {
+      setUserRankInfo(null);
     }
-  }, [currentAnonymousId, entries]);
+  }, [authLoading, authAnonId, user, entries]);
 
   const handleSortChange = (key: SortKey) => {
     setSortKey(key);
@@ -237,15 +212,9 @@ export default function LeaderboardPage() {
         {/* Filters and Sorting */}
         <section className="flex flex-col md:flex-row justify-between items-center gap-4 fade-in-rise delay-100 mt-4">
           <div className="flex items-center gap-2 bg-surface-container-high/40 backdrop-blur-xl p-1.5 rounded-full border border-white/5">
-            <button className="px-6 py-2 rounded-full bg-surface-container-highest text-on-surface font-body-base text-xs font-bold font-label-caps tracking-wider shadow-sm">
-              GLOBAL
-            </button>
-            <button className="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-body-base text-xs font-bold font-label-caps tracking-wider transition-colors">
-              REGIONAL
-            </button>
-            <button className="px-6 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-body-base text-xs font-bold font-label-caps tracking-wider transition-colors">
-              LOCAL
-            </button>
+            <span className="px-6 py-2 text-primary font-body-base text-xs font-bold font-label-caps tracking-wider">
+              GLOBAL STANDING
+            </span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -315,12 +284,14 @@ export default function LeaderboardPage() {
                   <tbody className="font-body-base text-sm divide-y divide-white/5">
                     {entries.map((entry, i) => {
                       const globalRank = page * PER_PAGE + i + 1;
-                      const isCurrentUser = entry.anonymous_id === currentAnonymousId;
-                      const { name, region, avatar } = getStewardDetails(isCurrentUser, globalRank);
+                      const isCurrentUser = 
+                        (user && entry.user_id === user.id) || 
+                        (!user && entry.anonymous_id === currentAnonymousId);
+                      const { name, region, avatar } = getStewardDetails(entry, isCurrentUser);
 
                       return (
                         <tr
-                          key={entry.anonymous_id}
+                          key={entry.anonymous_id || entry.user_id || i}
                           className={`hover:bg-surface-container-high/30 transition-colors group ${
                             isCurrentUser ? "bg-primary-container/10 border-l-2 border-primary" : ""
                           }`}
@@ -344,8 +315,12 @@ export default function LeaderboardPage() {
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0">
-                                <img className="w-full h-full object-cover" src={avatar} alt={name} />
+                              <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 shrink-0 flex items-center justify-center bg-primary/20 text-primary">
+                                {avatar ? (
+                                  <img className="w-full h-full object-cover" src={avatar} alt={name} />
+                                ) : (
+                                  <span className="material-symbols-outlined text-sm">eco</span>
+                                )}
                               </div>
                               <div>
                                 <div className="font-semibold text-on-surface flex items-center gap-1.5 text-xs">
@@ -411,19 +386,25 @@ export default function LeaderboardPage() {
   );
 }
 
-async function fetchUserRank(anonymousId: string): Promise<number | undefined> {
+async function fetchUserRank(anonymousId: string | null, userId: string | null): Promise<number | undefined> {
   try {
     const allRes = await fetch("/api/leaderboard?offset=0&limit=200");
     const allJson = await allRes.json();
     const allEntries: LeaderboardEntry[] = allJson.leaderboard ?? [];
-    const idx = allEntries.findIndex((e) => e.anonymous_id === anonymousId);
+    const idx = allEntries.findIndex((e) => 
+      (userId && e.user_id === userId) || 
+      (!userId && anonymousId && e.anonymous_id === anonymousId)
+    );
     if (idx >= 0) return idx + 1;
 
-    const selfRes = await fetch(`/api/footprint?anonymous_id=${encodeURIComponent(anonymousId)}`);
+    const idQuery = userId ? `?user_id=${userId}` : anonymousId ? `?anonymous_id=${encodeURIComponent(anonymousId)}` : "";
+    if (!idQuery) return undefined;
+    
+    const selfRes = await fetch(`/api/footprint${idQuery}`);
     if (!selfRes.ok) return undefined;
     const selfJson = await selfRes.json();
-    if (!selfJson.footprint) return undefined;
-    const userScore = selfJson.footprint.eco_score;
+    const userScore = selfJson.eco_score;
+    if (userScore === undefined) return undefined;
 
     const aboveRes = await fetch("/api/leaderboard?offset=0&limit=500");
     const aboveJson = await aboveRes.json();

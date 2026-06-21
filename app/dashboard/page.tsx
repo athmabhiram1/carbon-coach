@@ -23,6 +23,7 @@ import type { FootprintResult } from "@/lib/carbonCalculator";
 import type { Persona } from "@/lib/personas";
 import type { EcoScore } from "@/lib/ecoScore";
 import type { Action } from "@/lib/timeMachine";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 const BreakdownChart = dynamic(
   () => import("@/components/dashboard/BreakdownChart"),
@@ -34,12 +35,7 @@ const AICoach = dynamic(
   { ssr: false, loading: () => <div className="h-[360px] animate-pulse rounded-2xl bg-surface-container-high/40" /> }
 );
 
-interface SavedData {
-  anonymousId: string;
-  personaId: string;
-  inputs: UserInputs;
-  timestamp: number;
-}
+
 
 const DEFAULT_ACTIONS: Action[] = [
   { id: "reduce-driving", label: "Reduce driving by 20%", savingsKg: 500 },
@@ -50,6 +46,7 @@ const DEFAULT_ACTIONS: Action[] = [
 ];
 
 export default function Dashboard() {
+  const { user, anonymousId: authAnonId, isLoading: authLoading, isAnonymous, signInWithOAuth } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [persona, setPersona] = useState<Persona | null>(null);
@@ -77,50 +74,135 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const savedRaw = safeGetItem("carbon-coach-data");
-    const id = safeGetItem("carbon-coach-anonymous-id");
+    if (authLoading) return;
 
-    if (!savedRaw || !id) {
-      const timeout = setTimeout(() => router.push("/"), 2000);
-      return () => clearTimeout(timeout);
-    }
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const idParam = authAnonId ? `?anonymous_id=${authAnonId}` : "";
+        const apiRes = await fetch(`/api/footprint${idParam}`);
+        
+        let dbFootprint = null;
+        if (apiRes.ok) {
+          dbFootprint = await apiRes.json();
+        }
 
-    setAnonymousId(id);
+        if (dbFootprint) {
+          const p = getPersonaById(dbFootprint.persona_id);
+          if (p) {
+            setPersona(p);
+            setAnonymousId(dbFootprint.anonymous_id || "");
 
-    try {
-      const saved: SavedData = JSON.parse(savedRaw);
-      const p = getPersonaById(saved.personaId);
-      if (!p) return;
+            // Attempt to restore user inputs from localStorage
+            const savedRaw = safeGetItem("carbon-coach-data");
+            let reconstructedInputs = null;
+            if (savedRaw) {
+              try {
+                const saved = JSON.parse(savedRaw);
+                if (saved.personaId === p.id) {
+                  reconstructedInputs = saved.inputs;
+                }
+              } catch {}
+            }
 
-      setPersona(p);
-      setInputs(saved.inputs);
+            // Fallback to estimation from persona if not found in localStorage
+            if (!reconstructedInputs) {
+              reconstructedInputs = {
+                kmDrivenPerWeek: p.id === "daily-commuter" ? 300 : p.id === "frequent-flyer" ? 50 : p.id === "eco-conscious" ? 20 : p.id === "student" ? 10 : 80,
+                publicTransportKmPerWeek: p.id === "student" ? 100 : p.id === "eco-conscious" ? 80 : 20,
+                flightsPerYear: p.id === "frequent-flyer" ? 20 : p.id === "daily-commuter" ? 2 : p.id === "remote-worker" ? 3 : p.id === "student" ? 1 : 0,
+                dietType: p.id === "eco-conscious" ? "vegan" : p.id === "student" ? "vegetarian" : "omnivore",
+                electricityKwhPerMonth: p.id === "remote-worker" ? 800 : p.id === "frequent-flyer" ? 300 : p.id === "daily-commuter" ? 500 : p.id === "student" ? 200 : 400,
+                onlineOrdersPerMonth: p.id === "frequent-flyer" ? 15 : p.id === "remote-worker" ? 10 : p.id === "daily-commuter" ? 5 : p.id === "student" ? 2 : 3,
+                naturalGasThermsPerMonth: p.id === "remote-worker" ? 50 : p.id === "daily-commuter" ? 40 : p.id === "student" ? 15 : 20,
+              };
+            }
 
-      const footprint = calculateFootprint(saved.inputs, p);
-      setResult(footprint);
+            setInputs(reconstructedInputs);
 
-      const savedChecked = safeGetItem("carbon-coach-checked-actions");
-      const checked = savedChecked ? JSON.parse(savedChecked) : [];
-      setCheckedActions(checked);
+            const footprint = calculateFootprint(reconstructedInputs, p);
+            setResult(footprint);
 
-      const score = calculateEcoScore(
-        checked.length,
-        0,
-        checked.length * 250
-      );
-      setEcoScore(score);
+            const savedChecked = safeGetItem("carbon-coach-checked-actions");
+            const checked = savedChecked ? JSON.parse(savedChecked) : [];
+            setCheckedActions(checked);
 
-      setLoading(false);
+            const score = calculateEcoScore(
+              checked.length,
+              0,
+              checked.reduce((sum: number, id: string) => {
+                const action = allActions.find((a) => a.id === id);
+                return sum + (action?.savingsKg ?? 0);
+              }, 0)
+            );
+            setEcoScore(score);
+            setLoading(false);
+          }
+        } else {
+          // Fallback to local storage
+          const savedRaw = safeGetItem("carbon-coach-data");
+          const localAnonId = safeGetItem("carbon-coach-anonymous-id");
 
-      fetch(`/api/leaderboard`)
-        .then((r) => r.json())
-        .then((json) => {
+          if (!savedRaw || !localAnonId) {
+            router.push("/");
+            return;
+          }
+
+          setAnonymousId(localAnonId);
+          const saved = JSON.parse(savedRaw);
+          const p = getPersonaById(saved.personaId);
+          if (p) {
+            setPersona(p);
+            setInputs(saved.inputs);
+
+            const footprint = calculateFootprint(saved.inputs, p);
+            setResult(footprint);
+
+            const savedChecked = safeGetItem("carbon-coach-checked-actions");
+            const checked = savedChecked ? JSON.parse(savedChecked) : [];
+            setCheckedActions(checked);
+
+            const score = calculateEcoScore(
+              checked.length,
+              0,
+              checked.reduce((sum: number, id: string) => {
+                const action = allActions.find((a) => a.id === id);
+                return sum + (action?.savingsKg ?? 0);
+              }, 0)
+            );
+            setEcoScore(score);
+            setLoading(false);
+          }
+        }
+
+        // Fetch leaderboard totals
+        const rankRes = await fetch(`/api/leaderboard`);
+        if (rankRes.ok) {
+          const json = await rankRes.json();
           if (json.totalCount) setTotalUsers(json.totalCount);
-        })
-        .catch(() => {});
-    } catch {
-      router.push("/");
-    }
-  }, [router]);
+        }
+      } catch (err) {
+        console.error("Dashboard loading error:", err);
+        const savedRaw = safeGetItem("carbon-coach-data");
+        if (savedRaw) {
+          try {
+            const saved = JSON.parse(savedRaw);
+            const p = getPersonaById(saved.personaId);
+            if (p) {
+              setPersona(p);
+              setInputs(saved.inputs);
+              setResult(calculateFootprint(saved.inputs, p));
+              setLoading(false);
+              return;
+            }
+          } catch {}
+        }
+        router.push("/");
+      }
+    };
+
+    loadData();
+  }, [authLoading, authAnonId, router, allActions]);
 
   const recalcEcoScore = useCallback(
     (checked: string[], actions: Action[]) => {
@@ -142,14 +224,14 @@ export default function Dashboard() {
 
   const persistToSupabase = useCallback(
     (checked: string[], actions: Action[]) => {
-      if (!anonymousId || !result || !persona || !inputs) return;
+      if ((!user && !anonymousId) || !result || !persona || !inputs) return;
 
       try {
         fetch("/api/footprint", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            anonymousId,
+            anonymousId: user ? null : anonymousId,
             personaId: persona.id,
             totalKgCO2PerYear: result.totalKgCO2PerYear,
             breakdown: result.breakdown,
@@ -173,7 +255,7 @@ export default function Dashboard() {
         }).catch(() => {});
       } catch {}
     },
-    [anonymousId, result, persona, inputs, ecoScore]
+    [user, anonymousId, result, persona, inputs, ecoScore]
   );
 
   const handleActionToggle = useCallback(
@@ -261,6 +343,26 @@ export default function Dashboard() {
       {/* Main Content Canvas */}
       <div className="relative z-10 pt-[120px] pb-section-gap px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto space-y-gutter flex-grow w-full">
         <StorageWarning />
+
+        {isAnonymous && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-on-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-in-rise">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-amber-500 text-[24px]">shield_alert</span>
+              <div className="flex flex-col text-left">
+                <span className="text-sm font-semibold">Guest Session Active</span>
+                <span className="text-xs text-on-surface-variant">Sign in to sync your carbon score and streaks across devices.</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => signInWithOAuth("google")} 
+                className="px-4 py-2 bg-primary text-on-primary text-xs font-bold rounded-full hover:bg-primary-fixed scale-95 active:scale-90 transition-all font-label-caps"
+              >
+                SIGN IN WITH GOOGLE
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header Section */}
         <header className="fade-in-rise mb-8">

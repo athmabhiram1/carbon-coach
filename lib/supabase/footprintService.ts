@@ -1,8 +1,9 @@
-import { createClient } from "./server";
+import { createServiceClient } from "./server";
 import type { ActionRecord, LeaderboardEntry } from "./types";
 
 interface SaveFootprintData {
-  anonymousId: string;
+  userId?: string | null;
+  anonymousId?: string | null;
   personaId: string;
   totalKgCO2PerYear: number;
   breakdown: { transport: number; diet: number; energy: number; shopping: number };
@@ -20,17 +21,30 @@ export async function saveFootprint(
   data: SaveFootprintData
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
-    const supabase = createClient();
+    // Use service client to ensure upsert goes through RLS correctly
+    const supabase = createServiceClient() as any;
 
-    const { data: existing } = await supabase
-      .from("footprints")
-      .select("id")
-      .eq("anonymous_id", data.anonymousId)
-      .limit(1)
-      .single();
+    let existingId: string | undefined = undefined;
+
+    if (data.userId) {
+      const { data: existing } = await supabase
+        .from("footprints")
+        .select("id")
+        .eq("user_id", data.userId)
+        .maybeSingle() as any;
+      if (existing) existingId = existing.id;
+    } else if (data.anonymousId) {
+      const { data: existing } = await supabase
+        .from("footprints")
+        .select("id")
+        .eq("anonymous_id", data.anonymousId)
+        .maybeSingle() as any;
+      if (existing) existingId = existing.id;
+    }
 
     const payload = {
-      anonymous_id: data.anonymousId,
+      user_id: data.userId || null,
+      anonymous_id: data.userId ? null : (data.anonymousId || null),
       persona_id: data.personaId,
       total_kg_co2_per_year: data.totalKgCO2PerYear,
       breakdown: data.breakdown,
@@ -44,14 +58,14 @@ export async function saveFootprint(
       streak_days: data.streakDays,
     };
 
-    if (existing) {
+    if (existingId) {
       const { error } = await supabase
         .from("footprints")
         .update({ ...payload, updated_at: new Date().toISOString() })
-        .eq("anonymous_id", data.anonymousId);
+        .eq("id", existingId);
 
       if (error) return { success: false, error: error.message };
-      return { success: true, id: existing.id };
+      return { success: true, id: existingId };
     }
 
     const { data: inserted, error } = await supabase
@@ -70,14 +84,21 @@ export async function saveFootprint(
   }
 }
 
-export async function getFootprint(anonymousId: string) {
+export async function getFootprint(anonymousId?: string | null, userId?: string | null) {
   try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("footprints")
-      .select("*")
-      .eq("anonymous_id", anonymousId)
-      .maybeSingle();
+    const supabase = createServiceClient() as any;
+    
+    let query = supabase.from("footprints").select("*");
+    
+    if (userId) {
+      query = query.eq("user_id", userId);
+    } else if (anonymousId) {
+      query = query.eq("anonymous_id", anonymousId);
+    } else {
+      return { error: "Either user_id or anonymous_id must be provided" };
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) return { error: error.message };
     return { data: data ?? undefined };
@@ -90,20 +111,44 @@ export async function getFootprint(anonymousId: string) {
 
 export async function getLeaderboard(
   offset = 0,
-  limit = 50
+  limit = 50,
+  sortBy: "eco_score" | "total_kg_co2_per_year" | "created_at" = "eco_score"
 ) {
   try {
-    const supabase = createClient();
+    const supabase = createServiceClient() as any;
 
     const from = offset;
     const to = offset + limit - 1;
 
+    let orderColumn = "eco_score";
+    let ascending = false;
+
+    if (sortBy === "total_kg_co2_per_year") {
+      orderColumn = "total_kg_co2_per_year";
+      ascending = true;
+    } else if (sortBy === "created_at") {
+      orderColumn = "created_at";
+      ascending = false;
+    }
+
+    // Fetch footprints joined with profiles table
     const { data, error } = await supabase
       .from("footprints")
-      .select(
-        "anonymous_id, persona_id, eco_score, eco_level, total_kg_co2_per_year, created_at"
-      )
-      .order("eco_score", { ascending: false })
+      .select(`
+        anonymous_id,
+        user_id,
+        persona_id,
+        eco_score,
+        eco_level,
+        total_kg_co2_per_year,
+        created_at,
+        profiles:user_id (
+          display_name,
+          avatar_url,
+          region
+        )
+      `)
+      .order(orderColumn, { ascending })
       .range(from, to);
 
     const { count, error: countError } = await supabase
@@ -122,9 +167,9 @@ export async function getLeaderboard(
   }
 }
 
-export async function getUserRank(anonymousId: string) {
+export async function getUserRank(anonymousId?: string | null, userId?: string | null) {
   try {
-    const supabase = createClient();
+    const supabase = createServiceClient() as any;
 
     const { count, error: countError } = await supabase
       .from("footprints")
@@ -133,11 +178,16 @@ export async function getUserRank(anonymousId: string) {
     if (countError) return { error: countError.message };
     const totalCount = count ?? 0;
 
-    const { data: userFootprint } = await supabase
-      .from("footprints")
-      .select("eco_score")
-      .eq("anonymous_id", anonymousId)
-      .maybeSingle();
+    let userQuery = supabase.from("footprints").select("eco_score");
+    if (userId) {
+      userQuery = userQuery.eq("user_id", userId);
+    } else if (anonymousId) {
+      userQuery = userQuery.eq("anonymous_id", anonymousId);
+    } else {
+      return { rank: undefined, totalCount };
+    }
+
+    const { data: userFootprint } = await userQuery.maybeSingle();
 
     if (!userFootprint) {
       return { rank: undefined, totalCount };
